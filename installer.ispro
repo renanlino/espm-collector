@@ -1,0 +1,42 @@
+; InstallSimple project
+
+[Setup]
+WindowTitle=Leitor de Planilhas ESPM
+ProductName=Leitor de Planilhas ESPM
+
+[Graphics]
+SplashScreen=
+SplashScreenDelay=3
+Header=
+HeaderJustify=Right
+HeaderFontColor=0
+WizardBitmap=
+WizardFontColor=0
+
+[FirstMessage]
+Este instalador vai guiá-lo pela instalação do Leitor de Planilhas ESPM.
+[LastMessage]
+A instalação foi concluída!
+
+[LicenseAgreement]
+
+[SetupFiles]
+SourceFolder=C:\Users\Contratado.me\Software\dev\ESPMautoCollect_dist
+SpecialFolder=My Documents
+SetupPath=PlanilhasESPM
+SetupFile=C:\Users\Contratado.me\Desktop\ESPMInstall.exe
+
+[Shortcuts]
+ProgramGroup=Planilhas ESPM
+bin\main.exe=dm
+
+[Registry]
+
+[Requirements]
+OperatingSystem=WinAll
+NetFramework=0
+NetFrameworkLink=http://www.microsoft.com/en-us/download/details.aspx?id=17718
+AdminRights=0
+
+[AfterInstalling]
+Reboot=0

@@ -2,8 +2,18 @@ import openpyxl
 import re
 import os
 import sys
+from datetime import datetime
 
 VALID_INPUT = ["1", "2", "3", "4", "5", 1, 2, 3, 4, 5]
+
+if "--debug" in sys.argv:
+    DEBUG = True
+else:
+    DEBUG = False
+
+def errorRouter():
+    input("Pressione ENTER para sair")
+    sys.exit(0)
 
 class ESPM_Student_ST:
     def __init__(self, RA, info=None):
@@ -68,7 +78,8 @@ class ESPM_Student_WS:
                         "Turma":{"column":None},
                         "Semestre":{"column":None},
                         "Traços":{},
-                        "Header":{"row":None}}
+                        "Header":{"row":None},
+                        "Professor":None}
         for row in self.ws.iter_rows():
             nextIsProfessorName = False
             for cell in row:
@@ -92,33 +103,70 @@ class ESPM_Student_WS:
         return ws_structure
 
 def main():
+    print("#####################################################################")
+    print("#                      LEITOR DE PLANILHAS ESPM                     #")
+    print("#                                                                   #")
+    print("# 1) Certifique-se que todas as planilhas estão no diretório /aval  #")
+    print("# 2) Certifique-se que todas as planilhas têm um formato válido     #")
+    print("# 3) Certifique-se o arquivo tracos.txt lista todos os tracos       #")
+    print("#    avaliados.                                                     #")
+    print("# 4) O resultado da coleta será gravado no arquivo output.xlsx      #")
+    print("#    Certifique-se que ele não está aberto em outro programa        #")
+    print("#                                                                   #")
+    print("# Suporte: Renan Yuri Lino (renan.lino@gmail.com)                   #")
+    print("#####################################################################")
+    input("Pressione ENTER para começar...")
+
+    os.chdir("..")
     print(os.getcwd())
+
+    print("Lendo traços...")
     try:
         listaTracos = open("tracos.txt", "r")
     except IOError:
-        print("Erro ao abrir a referência de competências e traços em traços.txt. Abortando.")
-        sys.exit(0)
+        print("400 - Erro ao abrir a referência de competências e traços em tracos.txt. Abortando.")
+        errorRouter()
 
     hdr = ["N", "Avaliador", "RA", "Amostra/Estudantes", "Turma",
             "Semestre do estudante", "Data da coleta"]
+    vetorTracos = []
     for line in listaTracos:
         line = line.replace("\n","").replace("\r","").replace(" ", "")
         hdr.append(line)
+        vetorTracos.append(line)
     listaTracos.close()
+
+    print()
+    for t in vetorTracos:
+        print("\t" + t)
+    print("Leu %d traços" %len(vetorTracos))
+    input("Pressione ENTER para continuar...")
 
     outputWb = openpyxl.Workbook(write_only=True)
     wsOut = outputWb.create_sheet()
 
     wsOut.append(hdr)
 
+    timestamp = datetime.now()
+    semester = timestamp.month // 6 + 1
+    nowStamp = timestamp.strftime("%Y")
+    nowStamp += "." + str(semester)
+
     os.chdir("./aval")
+    print()
+    print("Lendo planilhas de %s" %os.getcwd())
+    for filename in os.listdir():
+        if re.match('.*\.xlsx', filename) and "~$" not in filename:
+            print("\t" + filename)
+    print("Encontrou %d planilhas." %len(os.listdir()))
+    input("Pressione ENTER para continuar...")
     N = 1
     for filename in os.listdir():
         if re.match('.*\.xlsx', filename) and "~$" not in filename:
             try:
                 wb = openpyxl.load_workbook(filename)
             except IOError:
-                print("Erro ao abrir o arquivo %s. Ignorando." %(filename))
+                print("401 - Erro ao abrir o arquivo %s. Ignorando." %(filename))
                 continue
             for sheet_name in wb.get_sheet_names():
                 if "Traços" not in sheet_name:
@@ -133,28 +181,34 @@ def main():
                                 str(data[RA]["info"]["Nome"]),
                                 str(data[RA]["info"]["Turma"]),
                                 str(data[RA]["info"]["Semestre"]),
-                                "2017.2"]
+                                nowStamp]
                         offset = len(entry)
                         for i in range(len(hdr) - len(entry)):
                             entry.append("")
-                        print("\t%s (%s) | T: %s | Sem: %s" %(entry[1], entry[2],
-                                    entry[3], entry[4]) )
+                        if DEBUG:
+                            print("\t%s (%s) | T: %s | Sem: %s" %(entry[3], entry[2],
+                                        entry[4], entry[5]) )
                         for traco in data[RA]["tracos"]:
-                            print("\t\t%s : %s" %(traco, data[RA]["tracos"][traco]))
+                            if DEBUG:
+                                print("\t\t%s : %s" %(traco, data[RA]["tracos"][traco]))
                             try:
                                 i = hdr.index(traco)
                             except ValueError:
-                                print("\t\tCompetência/traço inesperado. Ignorando.")
+                                print("\t\t403 - Competência/traço %s inesperado. Ignorando." %traco)
                                 continue
                             entry[i] = str(data[RA]["tracos"][traco])
 
                         wsOut.append(entry)
                         N += 1
 
-                print()
-
     os.chdir("../")
-    outputWb.save('output.xlsx')
+    try:
+        outputWb.save('output.xlsx')
+    except IOError:
+        print("405 - Erro ao salvar o arquivo output.xlsx. Ele está aberto em outro programa?")
+        errorRouter()
 
+    print("Coleta salva em output.xlsx. Encerrando.")
 
 main()
+input()
