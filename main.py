@@ -70,9 +70,15 @@ class ESPM_Student_WS:
                         "Traços":{},
                         "Header":{"row":None}}
         for row in self.ws.iter_rows():
+            nextIsProfessorName = False
             for cell in row:
                 if type(cell.value) is str:
-                    if "R.A" == cell.value or "RA" == cell.value:
+                    if "Professor" == cell.value:
+                        nextIsProfessorName = True
+                    elif nextIsProfessorName:
+                        nextIsProfessorName = False
+                        ws_structure["Professor"] = cell.value
+                    elif "R.A" == cell.value or "RA" == cell.value:
                         ws_structure["RA"]["column"] = cell.column
                         ws_structure["Header"]["row"] = cell.row
                     elif "Nome" == cell.value:
@@ -116,10 +122,10 @@ def main():
                 continue
             for sheet_name in wb.get_sheet_names():
                 if "Traços" not in sheet_name:
-                    avaliador = filename.replace(".xlsx","").title()
-                    print("Processando avaliações de %s (%s)" %(avaliador, sheet_name ))
 
                     ws_data = ESPM_Student_WS(wb[sheet_name], filename)
+                    avaliador = ws_data.structure["Professor"].title()
+                    print("Processando avaliações de %s (%s)" %(avaliador, sheet_name ))
                     data = ws_data.readStudents()
 
                     for RA in data:
